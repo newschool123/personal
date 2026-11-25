@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Interview: The Missing Friend</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="game-container intro-active">
+    <section id="main-menu" class="main-menu" aria-labelledby="game-title">
+      <div class="menu-panel">
+        <p class="menu-eyebrow">CASE FILE: 01</p>
+        <h1 id="game-title">The Last Interview</h1>
+        <p class="menu-description">A quiet room. A missing friend. One answer could change everything.</p>
+        <button id="start-game" class="menu-start" type="button">Check Messages</button>
+        <p class="menu-hint">A message came in from Mau</p>
+      </div>
+    </section>
+    <section id="phone-scene" class="phone-scene" aria-label="Messages from Mau" hidden>
+      <div class="phone-device">
+        <div class="phone-screen">
+          <div class="phone-status"><span>11:48</span><span>●●● &nbsp;▰</span></div>
+          <header class="phone-header">
+            <span class="phone-back" aria-hidden="true">‹</span>
+            <div class="phone-contact">
+              <span class="phone-avatar" aria-hidden="true">M</span>
+              <span><strong>Mau</strong><small>Messages</small></span>
+            </div>
+            <span class="phone-info" aria-hidden="true">i</span>
+          </header>
+          <div id="phone-thread" class="phone-thread" aria-live="polite">
+            <p class="phone-date">TODAY  ·  11:48 PM</p>
+            <div class="phone-message received" hidden>Freya, are you awake? I need to tell you something.<time>11:48 PM</time></div>
+            <div class="phone-message sent" hidden>Yeah, I'm here. What's wrong?<time>11:48 PM</time></div>
+            <div class="phone-message received" hidden>I went back to Blackwood Station. There’s somewhere there I can hide.<time>11:49 PM</time></div>
+            <div class="phone-message sent" hidden>Why are you at the station? Are you safe?<time>11:49 PM</time></div>
+            <div class="phone-message received" hidden>I need to get away from here. I can't take it anymore.<time>11:51 PM</time></div>
+            <div class="phone-message sent" hidden>Stay where you are. I'm coming. Please answer me.<time>11:51 PM</time></div>
+            <div class="phone-typing" hidden aria-label="Mau is typing"><span></span><span></span><span></span></div>
+          </div>
+          <div class="phone-compose" aria-hidden="true"><span>Message</span><span class="phone-send">↑</span></div>
+        </div>
+        <div class="phone-home-indicator"></div>
+      </div>
+      <p class="phone-caption">Freya sends one last message. No reply comes.</p>
+      <button id="skip-phone-scene" class="phone-skip" type="button">Skip</button>
+      <button id="continue-to-interview" class="phone-continue" type="button" hidden>Continue</button>
+    </section>
+    <section id="days-later-scene" class="days-later-scene" aria-label="Two days later" hidden>
+      <div class="time-card">
+        <p>BLACKWOOD POLICE DEPARTMENT</p>
+        <h2>Two Days Later</h2>
+        <span>THE INTERVIEW BEGINS</span>
+      </div>
+      <button id="continue-from-time-card" class="time-card-continue" type="button">Continue</button>
+    </section>
+    <section id="home-disclosure-scene" class="home-disclosure-scene" aria-label="Freya's memory" hidden>
+      <p id="home-disclosure-text" class="home-disclosure-text">her father</p>
+    </section>
+    <section id="chapter-two-scene" class="chapter-two-scene" aria-label="Chapter two" hidden>
+      <div class="chapter-two-card">
+        <p>CHAPTER TWO</p>
+        <h2>The Secret</h2>
+        <span>The interview continues</span>
+      </div>
+      <button id="continue-chapter-two" type="button">Continue</button>
+    </section>
+    <audio id="background-music" src="Daddy%20Cop-Zander%20Hawley%20(Slowed).mp3" loop preload="auto"></audio>
+    <button id="music-toggle" class="music-toggle" type="button" aria-pressed="false" hidden>Mute music</button>
+    <div
+      id="suspicion-meter"
+      class="suspicion-meter"
+      role="progressbar"
+      aria-label="Officer suspicion"
+      aria-valuemin="0"
+      aria-valuemax="3"
+      aria-valuenow="0"
+    >
+      <span class="suspicion-label">SUSPICION</span>
+      <span class="suspicion-track"><span id="suspicion-fill" class="suspicion-fill"></span></span>
+      <span id="suspicion-count" class="suspicion-count">0 / 3</span>
+    </div>
+    <div class="observation-window"></div>
+    <img id="character" src="daddy.png" alt="Daddy Cop interviewing a girl">
+    <div class="prisoner-silhouette" aria-hidden="true"></div>
+    <div class="cell-bars" aria-hidden="true"></div>
+
+    <div class="dialogue-box">
+      <div id="speaker-name" class="name-tag">Daddy Cop</div>
+      <p id="dialogue-text">Hello. I'm Officer Daddy Cop. I need to ask you a few questions about your missing friend Mau. What was Mau like, and where did you last see her?</p>
+      
+      <div id="choices" class="choices">
+        <button onclick="respond('personality')">Describe Mau's personality</button>
+        <button onclick="respond('location')">Tell him where Mau was last seen</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  
+</body>
+</html>
