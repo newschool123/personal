@@ -5,15 +5,43 @@ const suspicionMeter = document.getElementById("suspicion-meter");
 const suspicionFill = document.getElementById("suspicion-fill");
 const suspicionCount = document.getElementById("suspicion-count");
 const mainMenuElement = document.getElementById("main-menu");
+const chapterSelectMenuElement = document.getElementById("chapter-select-menu");
+const settingsMenuElement = document.getElementById("settings-menu");
+const pauseScreenElement = document.getElementById("pause-screen");
+const musicVolumeInput = document.getElementById("music-volume");
+const musicVolumeValue = document.getElementById("music-volume-value");
+const effectsVolumeInput = document.getElementById("effects-volume");
+const effectsVolumeValue = document.getElementById("effects-volume-value");
+const typingVolumeInput = document.getElementById("typing-volume");
+const typingVolumeValue = document.getElementById("typing-volume-value");
 const phoneSceneElement = document.getElementById("phone-scene");
 const daysLaterSceneElement = document.getElementById("days-later-scene");
 const homeDisclosureSceneElement = document.getElementById("home-disclosure-scene");
 const homeDisclosureText = document.getElementById("home-disclosure-text");
-const chapterTwoSceneElement = document.getElementById("chapter-two-scene");
+const chapterTwoFrameElement = document.getElementById("chapter-two-frame");
+const gameOverScreenElement = document.getElementById("game-over-screen");
+const returnToMenuButton = document.getElementById("return-to-menu");
 const gameContainerElement = document.querySelector(".game-container");
+const dialogueBoxElement = document.querySelector(".dialogue-box");
 const backgroundMusic = document.getElementById("background-music");
+const rainSound = document.getElementById("rain-sound");
+const lieSound = document.getElementById("lie-sound");
+const pauseableAudio = [backgroundMusic, rainSound, lieSound];
 const musicToggle = document.getElementById("music-toggle");
+const characterElement = document.getElementById("character");
+const characterImages = ["game1.png", "game2.png", "game3.png"];
+let lastCharacterImageIndex = 0;
+let characterScale = 1;
+let characterDrop = 0;
 let typingTimer;
+let typingAudioContext;
+let typingNoiseBuffer;
+let gameAudioStarted = false;
+let gamePaused = false;
+let audioWasPlayingWhenPaused = [];
+let musicVolume = 0.16;
+let soundEffectsVolume = 1;
+let typingVolume = 1;
 let daysLaterTimer;
 let homeDisclosureTimer;
 let phoneMessageTimers = [];
@@ -53,16 +81,56 @@ const truthChoices = new Set([
 ]);
 
 document.getElementById("start-game").addEventListener("click", () => {
-  mainMenuElement.hidden = true;
-  musicToggle.hidden = false;
-  playBackgroundMusic();
-  startPhoneScene();
+  startChapterOne();
+});
+document.getElementById("open-chapter-select").addEventListener("click", () => {
+  chapterSelectMenuElement.hidden = false;
+});
+document.getElementById("back-to-main-menu").addEventListener("click", () => {
+  chapterSelectMenuElement.hidden = true;
+});
+document.getElementById("play-chapter-one").addEventListener("click", startChapterOne);
+document.getElementById("play-chapter-two").addEventListener("click", launchChapterTwo);
+document.getElementById("game-over-return-to-menu").addEventListener("click", returnToMainMenu);
+returnToMenuButton.addEventListener("click", returnToMainMenu);
+window.addEventListener("message", (event) => {
+  if (event.source !== chapterTwoFrameElement.contentWindow || event.origin !== window.location.origin) return;
+  if (event.data?.type === "return-to-menu") returnToMainMenu();
+  if (event.data?.type === "toggle-pause") togglePause();
+});
+document.getElementById("open-settings").addEventListener("click", () => {
+  settingsMenuElement.hidden = false;
+});
+document.getElementById("close-settings").addEventListener("click", () => {
+  settingsMenuElement.hidden = true;
+});
+document.getElementById("resume-game").addEventListener("click", resumeGame);
+window.addEventListener("keydown", (event) => {
+  if (event.code !== "Space" || event.repeat) return;
+  if (["INPUT", "SELECT", "TEXTAREA"].includes(event.target.tagName)) return;
+
+  event.preventDefault();
+  togglePause();
+});
+musicVolumeInput.addEventListener("input", () => {
+  musicVolume = Number(musicVolumeInput.value) / 100;
+  backgroundMusic.volume = musicVolume;
+  musicVolumeValue.textContent = `${musicVolumeInput.value}%`;
+});
+effectsVolumeInput.addEventListener("input", () => {
+  soundEffectsVolume = Number(effectsVolumeInput.value) / 100;
+  rainSound.volume = 0.04 * soundEffectsVolume;
+  lieSound.volume = soundEffectsVolume;
+  effectsVolumeValue.textContent = `${effectsVolumeInput.value}%`;
+});
+typingVolumeInput.addEventListener("input", () => {
+  typingVolume = Number(typingVolumeInput.value) / 100;
+  typingVolumeValue.textContent = `${typingVolumeInput.value}%`;
 });
 
 document.getElementById("skip-phone-scene").addEventListener("click", finishPhoneScene);
 document.getElementById("continue-to-interview").addEventListener("click", finishPhoneScene);
 document.getElementById("continue-from-time-card").addEventListener("click", finishDaysLaterScene);
-document.getElementById("continue-chapter-two").addEventListener("click", finishChapterTwo);
 homeDisclosureSceneElement.addEventListener("click", (event) => {
   if (event.button !== 0) return;
   if (event.target.closest("#chapter-two-trigger")) {
@@ -86,8 +154,115 @@ musicToggle.addEventListener("click", () => {
   musicToggle.setAttribute("aria-pressed", String(backgroundMusic.muted));
 });
 
+function canPauseGame() {
+  if (gamePaused) return true;
+  return mainMenuElement.hidden &&
+    chapterSelectMenuElement.hidden &&
+    settingsMenuElement.hidden &&
+    phoneSceneElement.hidden &&
+    daysLaterSceneElement.hidden &&
+    homeDisclosureSceneElement.hidden &&
+    gameOverScreenElement.hidden &&
+    (chapterTwoFrameElement.hidden
+      ? !gameContainerElement.classList.contains("intro-active")
+      : true);
+}
+
+function togglePause() {
+  if (!canPauseGame()) return;
+  if (gamePaused) {
+    resumeGame();
+    return;
+  }
+
+  gamePaused = true;
+  audioWasPlayingWhenPaused = pauseableAudio.map((audio) => !audio.paused);
+  pauseableAudio.forEach((audio) => audio.pause());
+  if (typingAudioContext?.state === "running") {
+    typingAudioContext.suspend().catch((error) => {
+      console.error("Typing sound could not be paused:", error);
+    });
+  }
+  gameContainerElement.classList.add("paused");
+  chapterTwoFrameElement.contentDocument
+    ?.querySelector(".game-container")
+    ?.classList.add("paused");
+  pauseScreenElement.hidden = false;
+  document.getElementById("resume-game").focus();
+}
+
+function resumeGame() {
+  if (!gamePaused) return;
+  gamePaused = false;
+  gameContainerElement.classList.remove("paused");
+  chapterTwoFrameElement.contentDocument
+    ?.querySelector(".game-container")
+    ?.classList.remove("paused");
+  pauseScreenElement.hidden = true;
+  pauseableAudio.forEach((audio, index) => {
+    if (!audioWasPlayingWhenPaused[index]) return;
+    audio.play().catch((error) => {
+      console.error("Game audio could not be resumed:", error);
+    });
+  });
+  audioWasPlayingWhenPaused = [];
+  if (typingAudioContext?.state === "suspended") {
+    typingAudioContext.resume().catch((error) => {
+      console.error("Typing sound could not be resumed:", error);
+    });
+  }
+}
+
+function startChapterOne() {
+  mainMenuElement.hidden = true;
+  chapterSelectMenuElement.hidden = true;
+  settingsMenuElement.hidden = true;
+  returnToMenuButton.hidden = false;
+  startGameAudio();
+  startPhoneScene();
+}
+
+function launchChapterTwo() {
+  mainMenuElement.hidden = true;
+  chapterSelectMenuElement.hidden = true;
+  settingsMenuElement.hidden = true;
+  returnToMenuButton.hidden = true;
+  startGameAudio();
+  chapterTwoFrameElement.hidden = false;
+}
+
+function returnToMainMenu() {
+  clearInterval(typingTimer);
+  clearTimeout(daysLaterTimer);
+  clearTimeout(homeDisclosureTimer);
+  phoneMessageTimers.forEach(clearTimeout);
+  phoneMessageTimers = [];
+  phoneSceneElement.hidden = true;
+  daysLaterSceneElement.hidden = true;
+  homeDisclosureSceneElement.hidden = true;
+  chapterTwoFrameElement.hidden = true;
+  gameOverScreenElement.hidden = true;
+  returnToMenuButton.hidden = true;
+  chapterSelectMenuElement.hidden = true;
+  settingsMenuElement.hidden = true;
+  mainMenuElement.hidden = false;
+  gameContainerElement.classList.remove("interview-ended", "prison-ending");
+  gameContainerElement.classList.add("intro-active");
+  reset();
+  finishDialogue();
+}
+
+function startGameAudio() {
+  if (gameAudioStarted) return;
+  gameAudioStarted = true;
+  musicToggle.hidden = false;
+  initializeTypingSound();
+  playBackgroundMusic();
+  playRainSound();
+}
+
 function playBackgroundMusic() {
-  backgroundMusic.volume = 0.16;
+  backgroundMusic.volume = musicVolume;
   backgroundMusic.playbackRate = 0.9;
   backgroundMusic.play()
     .then(() => {
@@ -98,6 +273,66 @@ function playBackgroundMusic() {
       console.error("Background music could not be played:", error);
       musicToggle.textContent = "Retry music";
     });
+}
+
+function playRainSound() {
+  rainSound.volume = 0.04 * soundEffectsVolume;
+  rainSound.play().catch((error) => {
+    console.error("Rain sound effect could not be played:", error);
+  });
+}
+
+function playLieSound() {
+  lieSound.volume = soundEffectsVolume;
+  lieSound.currentTime = 0;
+  lieSound.play().catch((error) => {
+    console.error("Lie sound effect could not be played:", error);
+  });
+}
+
+function initializeTypingSound() {
+  const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextConstructor) {
+    console.warn("Typing sound is unavailable because Web Audio is not supported.");
+    return;
+  }
+
+  typingAudioContext = new AudioContextConstructor();
+  const bufferLength = Math.ceil(typingAudioContext.sampleRate * 0.025);
+  typingNoiseBuffer = typingAudioContext.createBuffer(1, bufferLength, typingAudioContext.sampleRate);
+  const noise = typingNoiseBuffer.getChannelData(0);
+  for (let i = 0; i < noise.length; i++) {
+    noise[i] = Math.random() * 2 - 1;
+  }
+
+  typingAudioContext.resume().catch((error) => {
+    console.error("Typing sound could not be enabled:", error);
+  });
+}
+
+function playTypingSound() {
+  if (
+    !typingAudioContext ||
+    !typingNoiseBuffer ||
+    typingAudioContext.state !== "running" ||
+    typingVolume === 0
+  ) return;
+
+  const now = typingAudioContext.currentTime;
+  const source = typingAudioContext.createBufferSource();
+  const filter = typingAudioContext.createBiquadFilter();
+  const volume = typingAudioContext.createGain();
+  source.buffer = typingNoiseBuffer;
+  filter.type = "bandpass";
+  filter.frequency.value = 1900 + Math.random() * 500;
+  filter.Q.value = 0.8;
+  volume.gain.setValueAtTime(0.012 * typingVolume, now);
+  volume.gain.exponentialRampToValueAtTime(0.001 * typingVolume, now + 0.025);
+  source.connect(filter);
+  filter.connect(volume);
+  volume.connect(typingAudioContext.destination);
+  source.start(now);
+  source.stop(now + 0.03);
 }
 
 function startPhoneScene() {
@@ -164,6 +399,11 @@ function finishDaysLaterScene() {
 }
 
 function startHomeDisclosure() {
+  awaitingCopResponse = null;
+  awaitingChoices = false;
+  awaitingHomeDisclosure = false;
+  choicesElement.innerHTML = "";
+  gameContainerElement.classList.add("interview-ended");
   homeDisclosureStage = 1;
   homeDisclosureText.textContent = "Her father";
   homeDisclosureText.classList.remove("fade-away");
@@ -174,7 +414,7 @@ function showAssaultedButton() {
   if (homeDisclosureStage !== 2 || homeDisclosureSceneElement.hidden) return;
   homeDisclosureStage = 3;
   homeDisclosureText.classList.remove("fade-away");
-  homeDisclosureText.innerHTML = '<button id="chapter-two-trigger" class="glitch-word" type="button">Hits her</button>';
+  homeDisclosureText.innerHTML = '<button id="chapter-two-trigger" class="glitch-word" type="button">Isn&apos;is not who you think he is</button>';
 }
 
 function startChapterTwo() {
@@ -182,31 +422,30 @@ function startChapterTwo() {
   clearTimeout(homeDisclosureTimer);
   homeDisclosureStage = 0;
   homeDisclosureSceneElement.hidden = true;
-  chapterTwoSceneElement.hidden = false;
-}
-
-function finishChapterTwo() {
-  chapterTwoSceneElement.hidden = true;
-  setSpeaker("Freya");
-  typeText("I couldn't keep Mau's secret anymore. I have to help the officer find her.");
-  awaitingChoices = true;
+  launchChapterTwo();
 }
 
 function setSpeaker(name) {
   speakerName.textContent = name;
+  dialogueBoxElement.classList.toggle("player-speaking", name === "Freya");
 }
 
 function renderChoices(choices) {
-  choicesElement.innerHTML = choices
+  const renderedChoices = choices
     .filter(([choice]) => !usedChoices.has(choice))
     .map(([choice, label]) => {
       const isLie = highlightedLieChoices.has(choice);
       const lieAttribute = isLie ? 'data-lie="true"' : "";
+      const nonLieAttribute = isLie ? "" : 'data-non-lie="true"';
       const secretRevealAttribute = choice === "homeYes" ? 'data-secret-reveal="true"' : "";
       const lieLabel = isLie ? '<span class="lie-label">LIE</span>' : "";
-      return `<button ${lieAttribute} ${secretRevealAttribute} onclick="respond('${choice}')">${label}${lieLabel}</button>`;
+      const truthLabel = isLie ? "" : '<span class="truth-label">TRUTH</span>';
+      return `<button ${lieAttribute} ${nonLieAttribute} ${secretRevealAttribute} onclick="respond('${choice}')">${label}${lieLabel}${truthLabel}</button>`;
     })
     .join("");
+  choicesElement.innerHTML = renderedChoices
+    ? `<div class="choices-panel">${renderedChoices}</div>`
+    : "";
 }
 
 function updateSuspicionMeter() {
@@ -217,18 +456,52 @@ function updateSuspicionMeter() {
   suspicionMeter.classList.toggle("is-high", progress >= 2);
 }
 
+function pulseRedScreen() {
+  gameContainerElement.classList.remove("lie-pulse");
+  void gameContainerElement.offsetWidth;
+  gameContainerElement.classList.add("lie-pulse");
+}
+
+function cycleCharacterImage() {
+  let nextImageIndex = Math.floor(Math.random() * characterImages.length);
+  if (nextImageIndex === lastCharacterImageIndex) {
+    nextImageIndex = (nextImageIndex + 1 + Math.floor(Math.random() * (characterImages.length - 1))) % characterImages.length;
+  }
+
+  lastCharacterImageIndex = nextImageIndex;
+  characterElement.src = characterImages[nextImageIndex];
+}
+
+function zoomCharacterForLie() {
+  characterScale = Math.min(characterScale + 0.12, 1.8);
+  characterDrop = Math.min(characterDrop + 18, 108);
+  characterElement.style.setProperty("--character-scale", String(characterScale));
+  characterElement.style.setProperty("--character-drop", `${characterDrop}px`);
+}
+
+function resetCharacterZoom() {
+  characterScale = 1;
+  characterDrop = 0;
+  characterElement.style.removeProperty("--character-scale");
+  characterElement.style.removeProperty("--character-drop");
+}
+
 function typeText(message) {
   clearInterval(typingTimer);
   fullDialogue = message;
+  cycleCharacterImage();
   dialogueTyping = true;
   textElement.textContent = "";
   let i = 0;
   typingTimer = setInterval(() => {
+    if (gamePaused) return;
     textElement.textContent += message[i];
+    if (i % 3 === 0 && !/\s/.test(message[i])) playTypingSound();
     i++;
     if (i >= message.length) {
       clearInterval(typingTimer);
       dialogueTyping = false;
+      showGameOverScreen();
     }
   }, 30);
 }
@@ -237,6 +510,13 @@ function finishDialogue() {
   clearInterval(typingTimer);
   textElement.textContent = fullDialogue;
   dialogueTyping = false;
+  showGameOverScreen();
+}
+
+function showGameOverScreen() {
+  if (!gameOver || (endingStage !== 4 && fakeInvestigationStage !== 4)) return;
+  gameOverScreenElement.hidden = false;
+  returnToMenuButton.hidden = true;
 }
 
 document.addEventListener("contextmenu", (event) => {
@@ -248,7 +528,7 @@ document.addEventListener("click", (event) => {
     event.target.closest("button") ||
     !mainMenuElement.hidden ||
     !homeDisclosureSceneElement.hidden ||
-    !chapterTwoSceneElement.hidden
+    !chapterTwoFrameElement.hidden
   ) return;
 
   if (dialogueTyping) {
@@ -257,7 +537,7 @@ document.addEventListener("click", (event) => {
     const copResponse = awaitingCopResponse;
     awaitingCopResponse = null;
     awaitingChoices = !gameOver;
-    setSpeaker("Daddy Cop");
+    setSpeaker("Officer Riley");
     typeText(copResponse);
   } else if (awaitingChoices) {
     awaitingChoices = false;
@@ -276,6 +556,8 @@ document.addEventListener("click", (event) => {
     }
   } else if (gameOver && endingStage > 0 && endingStage < 4) {
     advanceEnding();
+  } else if (gameOver && (endingStage === 4 || fakeInvestigationStage === 4)) {
+    showGameOverScreen();
   }
 });
 
@@ -287,7 +569,13 @@ function respond(choice) {
   const suspiciousResponse = lieChoices.has(choice) && choice !== "schoolStalker"
     ? raiseSuspicion()
     : null;
+  if (highlightedLieChoices.has(choice)) {
+    zoomCharacterForLie();
+    pulseRedScreen();
+    playLieSound();
+  }
   if (truthChoices.has(choice)) {
+    resetCharacterZoom();
     suspicionLevel = Math.max(0, suspicionLevel - 1);
     updateSuspicionMeter();
   }
@@ -333,10 +621,6 @@ function respond(choice) {
     copResponse = "What has been happening at home?";
     askingWhetherMauSharedHomeDetails = false;
     awaitingHomeDisclosure = true;
-  } else if (choice === "cantTell") {
-    freyaAnswer = "I can't tell you.";
-    copResponse = "All right. I won't force you to answer, but I need you to know it could affect where we look for her.";
-    askingWhoSheHidingFrom = false;
   } else if (choice === "schoolStalker") {
     freyaAnswer = "I shouldn't say this... but I think it was Eli Mercer. He went to her school, and she said he had been following her.";
     copResponse = "Eli Mercer? Are you sure he was following her?";
@@ -408,13 +692,13 @@ function raiseSuspicion() {
 function advanceFakeInvestigation() {
   if (fakeInvestigationStage === 1) {
     fakeInvestigationStage = 2;
-    setSpeaker("Daddy Cop");
+    setSpeaker("Officer Riley");
     typeText(fakeInvestigationResult);
     awaitingChoices = true;
   } else if (fakeInvestigationStage === 2) {
     fakeInvestigationStage = 3;
     gameOver = true;
-    setSpeaker("Daddy Cop");
+    setSpeaker("Officer Riley");
     typeText("He's not telling me everything. I'm placing him under arrest until we can get answers.");
     awaitingChoices = true;
   } else if (fakeInvestigationStage === 3) {
@@ -430,10 +714,10 @@ function advanceEnding() {
   if (endingStage === 1) {
     endingStage = 2;
     setSpeaker("Freya");
-    typeText("Please, Officer Daddy Cop, I was scared. I was only trying to help Mau. Please don't arrest me!");
+    typeText("Please, Officer Riley, I was scared. I was only trying to help Mau. Please don't arrest me!");
   } else if (endingStage === 2) {
     endingStage = 3;
-    setSpeaker("Daddy Cop");
+    setSpeaker("Officer Riley");
     typeText("I'm sorry, Freya. You misled the investigation. You're under arrest.");
   } else if (endingStage === 3) {
     endingStage = 4;
@@ -445,6 +729,9 @@ function advanceEnding() {
 
 function reset() {
   clearTimeout(homeDisclosureTimer);
+  resetCharacterZoom();
+  gameContainerElement.classList.remove("interview-ended");
+  gameOverScreenElement.hidden = true;
   usedChoices.clear();
   awaitingCopResponse = null;
   awaitingChoices = false;
@@ -455,7 +742,7 @@ function reset() {
   awaitingHomeDisclosure = false;
   homeDisclosureStage = 0;
   homeDisclosureSceneElement.hidden = true;
-  chapterTwoSceneElement.hidden = true;
+  chapterTwoFrameElement.hidden = true;
   awaitingSchoolConfirmation = false;
   suspicionLevel = 0;
   fakeInvestigationStage = 0;
@@ -463,8 +750,8 @@ function reset() {
   gameOver = false;
   endingStage = 0;
   updateSuspicionMeter();
-  setSpeaker("Daddy Cop");
-  typeText("Hello. I'm Officer Daddy Cop. I need to ask you a few questions about your missing friend Mau. What was Mau like, and where did you last see her?");
+  setSpeaker("Officer Riley");
+  typeText("Hello. I'm Officer Riley. I need to ask you a few questions about your missing friend Mau. What was Mau like, and where did you last see her?");
   showOpeningChoices();
 }
 
@@ -492,7 +779,6 @@ function showFollowUpChoices() {
     : askingWhoSheHidingFrom
     ? [
         ["parents", "She was hiding from her parents"],
-        ["cantTell", "I can't tell you"],
         ["schoolStalker", "Someone from school was following her"],
       ]
     : askingWhyStationTonight

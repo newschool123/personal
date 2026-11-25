@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chapter Two: Freya's Room</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .chapter-two-scene,
+        .chapter-two-gameplay {
+            position: absolute;
+            z-index: 14;
+            inset: 0;
+            overflow: hidden;
+            background:
+                radial-gradient(ellipse at 83% 28%, rgba(91, 103, 151, 0.25), transparent 30%),
+                linear-gradient(180deg, #171827 0 70%, #11101a 70% 100%);
+        }
+
+        .chapter-two-scene[hidden],
+        .chapter-two-gameplay[hidden] {
+            display: none;
+        }
+
+        .chapter-two-card {
+            position: absolute;
+            z-index: 2;
+            top: 17%;
+            left: 7%;
+            width: min(560px, 76vw);
+            padding: 30px 34px;
+            border-left: 2px solid rgba(155, 143, 196, 0.65);
+            background: linear-gradient(90deg, rgba(10, 10, 18, 0.82), rgba(10, 10, 18, 0.25));
+            text-align: left;
+            animation: time-card-arrive 650ms ease-out both;
+        }
+
+        .chapter-two-card p,
+        .chapter-two-card span {
+            margin: 0;
+            color: #b7afd5;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 3px;
+        }
+
+        .chapter-two-card h2 {
+            margin: 18px 0 10px;
+            color: #f0e9ed;
+            font-family: "IM Fell English SC", "Merriweather", Georgia, serif;
+            font-size: clamp(34px, 6vw, 54px);
+            font-weight: 400;
+            letter-spacing: 2px;
+        }
+
+        .chapter-two-card .chapter-two-narration {
+            max-width: 470px;
+            margin-top: 22px;
+            color: #e0ddea;
+            font-family: "Merriweather", Georgia, serif;
+            font-size: clamp(15px, 1.8vw, 19px);
+            font-weight: 400;
+            letter-spacing: 0;
+            line-height: 1.8;
+        }
+
+        .bedroom-window {
+            position: absolute;
+            top: 8%;
+            right: 12%;
+            width: min(30vw, 340px);
+            height: min(42vh, 360px);
+            overflow: hidden;
+            border: 10px solid #29283a;
+            background:
+                radial-gradient(ellipse at 68% 28%, rgba(201, 202, 225, 0.68), transparent 5%),
+                linear-gradient(180deg, #222b42, #131927 70%, #202032);
+            box-shadow: 0 0 44px rgba(109, 124, 174, 0.16), inset 0 0 30px rgba(0, 0, 0, 0.7);
+        }
+
+        .bedroom-window::before {
+            position: absolute;
+            inset: 0;
+            content: "";
+            background:
+                linear-gradient(90deg, transparent 48%, rgba(12, 12, 22, 0.9) 49% 51%, transparent 52%),
+                linear-gradient(180deg, transparent 48%, rgba(12, 12, 22, 0.9) 49% 51%, transparent 52%);
+        }
+
+        .bedroom-window::after {
+            position: absolute;
+            inset: -20%;
+            content: "";
+            background: repeating-linear-gradient(105deg, transparent 0 17px, rgba(199, 210, 233, 0.18) 18px 19px, transparent 20px 34px);
+            animation: bedroom-rain 900ms linear infinite;
+        }
+
+        .bedroom-bed {
+            position: absolute;
+            right: -4%;
+            bottom: -7%;
+            width: 67%;
+            height: 29%;
+            border-radius: 24% 8% 0 0;
+            background: linear-gradient(180deg, #353047, #171521 74%);
+            box-shadow: 0 -18px 30px rgba(5, 5, 10, 0.4);
+            transform: skewY(-3deg);
+        }
+
+        .bedroom-bed::before {
+            position: absolute;
+            top: -20%;
+            left: 8%;
+            width: 30%;
+            height: 38%;
+            border-radius: 18px 18px 6px 6px;
+            background: #4a455d;
+            content: "";
+        }
+
+        .chapter-two-scene > button {
+            position: absolute;
+            right: 24px;
+            bottom: 22px;
+        }
+
+        .chapter-two-empty-text {
+            min-height: 48px;
+            margin: 0 0 12px;
+            color: #eeeafa;
+        }
+
+        @keyframes bedroom-rain {
+            to {
+                transform: translate(-12px, 18px);
+            }
+        }
+
+        @media (max-width: 700px) {
+            .bedroom-window {
+                top: 8%;
+                right: 7%;
+                width: 42vw;
+                height: 36vh;
+                border-width: 7px;
+            }
+
+            .chapter-two-card {
+                top: 21%;
+                left: 5%;
+                width: 88%;
+                padding: 24px 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="game-container">
+        <button id="chapter-two-return-to-menu" class="return-to-menu" type="button">Return to menu</button>
+        <section class="chapter-two-scene" aria-label="Chapter two: Freya's room">
+            <div class="bedroom-window" aria-hidden="true"></div>
+            <div class="bedroom-bed" aria-hidden="true"></div>
+            <div class="chapter-two-card">
+                <p>CHAPTER TWO · THE NIGHT MAU DISAPPEARED</p>
+                <h2>Freya's Room</h2>
+                <span>11:48 PM</span>
+                <p class="chapter-two-narration">Rain tapped against my window when Mau's message lit up my phone: “I
+                    need to get away from here. I can't take it anymore.” I promised I was coming. Then she stopped
+                    answering.</p>
+            </div>
+            <button id="continue-to-chapter-two-gameplay" type="button">Continue</button>
+        </section>
+        <section class="chapter-two-gameplay" aria-label="Empty Chapter Two gameplay" hidden>
+            <div class="bedroom-window" aria-hidden="true"></div>
+            <div class="bedroom-bed" aria-hidden="true"></div>
+            <div class="suspicion-meter" role="progressbar" aria-label="Officer suspicion" aria-valuemin="0"
+                aria-valuemax="3" aria-valuenow="0">
+                <span class="suspicion-track"><span class="suspicion-fill"></span></span>
+                <span class="suspicion-count">0 / 3</span>
+            </div>
+            <div class="dialogue-box">
+                <div class="name-tag" aria-hidden="true"></div>
+                <p class="chapter-two-empty-text" aria-live="polite"></p>
+                <div class="choices" aria-label="Chapter Two choices"></div>
+            </div>
+        </section>
+    </main>
+    <script>
+        const roomScene = document.querySelector(".chapter-two-scene");
+        const gameplayScene = document.querySelector(".chapter-two-gameplay");
+
+        window.addEventListener("keydown", (event) => {
+            if (event.code !== "Space" || event.repeat) return;
+            if (["INPUT", "SELECT", "TEXTAREA"].includes(event.target.tagName)) return;
+
+            event.preventDefault();
+            const targetOrigin = window.location.origin === "null" ? "*" : window.location.origin;
+            window.parent.postMessage({ type: "toggle-pause" }, targetOrigin);
+        });
+
+        document.getElementById("continue-to-chapter-two-gameplay").addEventListener("click", () => {
+            roomScene.hidden = true;
+            gameplayScene.hidden = false;
+        });
+
+        document.getElementById("chapter-two-return-to-menu").addEventListener("click", () => {
+            if (window.parent === window) {
+                window.location.href = "index.html";
+                return;
+            }
+
+            const targetOrigin = window.location.origin === "null" ? "*" : window.location.origin;
+            window.parent.postMessage({ type: "return-to-menu" }, targetOrigin);
+        });
+    </script>
+</body>
+
+</html>

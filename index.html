@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Interview: The Missing Friend</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <div class="game-container intro-active">
     <section id="main-menu" class="main-menu" aria-labelledby="game-title">
@@ -13,7 +15,77 @@
         <h1 id="game-title">The Last Interview</h1>
         <p class="menu-description">A quiet room. A missing friend. One answer could change everything.</p>
         <button id="start-game" class="menu-start" type="button">Check Messages</button>
+        <button id="open-chapter-select" class="menu-settings" type="button">Chapter Select</button>
+        <button id="open-settings" class="menu-settings" type="button">Settings</button>
         <p class="menu-hint">A message came in from Mau</p>
+      </div>
+      <div class="evidence-board" aria-hidden="true">
+        <div class="evidence-string"></div>
+        <article class="evidence-card evidence-person">
+          <span class="evidence-label">MISSING PERSON</span>
+          <div class="evidence-photo"><span>M</span></div>
+          <strong>MAU</strong>
+          <small>Last contact · 11:51 PM</small>
+        </article>
+        <article class="evidence-card evidence-station">
+          <span class="evidence-label">LOCATION</span>
+          <strong>BLACKWOOD<br>STATION</strong>
+          <small>Last known location</small>
+        </article>
+        <article class="evidence-card evidence-note">
+          <span class="evidence-label">OPEN CASE</span>
+          <strong>THE LAST<br>INTERVIEW</strong>
+          <small>Every answer matters.</small>
+        </article>
+      </div>
+    </section>
+    <section id="chapter-select-menu" class="chapter-select-menu" aria-labelledby="chapter-select-title" hidden>
+      <div class="chapter-select-panel">
+        <p class="menu-eyebrow">CASE FILE: 01</p>
+        <h2 id="chapter-select-title">Select a Chapter</h2>
+        <div class="chapter-options">
+          <button id="play-chapter-one" class="chapter-option" type="button">
+            <span>CHAPTER ONE</span>
+            <strong>The Interview</strong>
+            <small>Check Mau's messages and begin the investigation.</small>
+          </button>
+          <button id="play-chapter-two" class="chapter-option" type="button">
+            <span>CHAPTER TWO</span>
+            <strong>The Night Mau Disappeared</strong>
+            <small>Begin in Freya's room on the night Mau went missing.</small>
+          </button>
+        </div>
+        <button id="back-to-main-menu" class="menu-settings" type="button">Back to menu</button>
+      </div>
+    </section>
+    <section id="settings-menu" class="settings-menu" aria-labelledby="settings-title" hidden>
+      <div class="settings-panel">
+        <p class="menu-eyebrow">PREFERENCES</p>
+        <h2 id="settings-title">Settings</h2>
+        <label class="volume-setting" for="music-volume">
+          <span>Music volume</span>
+          <output id="music-volume-value" for="music-volume">16%</output>
+          <input id="music-volume" type="range" min="0" max="100" value="16">
+        </label>
+        <label class="volume-setting" for="effects-volume">
+          <span>Sound effects volume</span>
+          <output id="effects-volume-value" for="effects-volume">100%</output>
+          <input id="effects-volume" type="range" min="0" max="100" value="100">
+        </label>
+        <label class="volume-setting" for="typing-volume">
+          <span>Typewriter volume</span>
+          <output id="typing-volume-value" for="typing-volume">100%</output>
+          <input id="typing-volume" type="range" min="0" max="100" value="100">
+        </label>
+        <button id="close-settings" class="menu-settings" type="button">Back to menu</button>
+      </div>
+    </section>
+    <section id="pause-screen" class="pause-screen" aria-labelledby="pause-title" aria-modal="true" role="dialog" hidden>
+      <div class="pause-panel">
+        <p class="menu-eyebrow">GAME PAUSED</p>
+        <h2 id="pause-title">Take a breath.</h2>
+        <p>Press Space or select Resume to continue.</p>
+        <button id="resume-game" class="menu-start" type="button">Resume</button>
       </div>
     </section>
     <section id="phone-scene" class="phone-scene" aria-label="Messages from Mau" hidden>
@@ -29,13 +101,17 @@
             <span class="phone-info" aria-hidden="true">i</span>
           </header>
           <div id="phone-thread" class="phone-thread" aria-live="polite">
-            <p class="phone-date">TODAY  ·  11:48 PM</p>
-            <div class="phone-message received" hidden>Freya, are you awake? I need to tell you something.<time>11:48 PM</time></div>
+            <p class="phone-date">TODAY · 11:48 PM</p>
+            <div class="phone-message received" hidden>Freya, are you awake? I need to tell you something.<time>11:48
+                PM</time></div>
             <div class="phone-message sent" hidden>Yeah, I'm here. What's wrong?<time>11:48 PM</time></div>
-            <div class="phone-message received" hidden>I went back to Blackwood Station. There’s somewhere there I can hide.<time>11:49 PM</time></div>
+            <div class="phone-message received" hidden>I went back to Blackwood Station. There’s somewhere there I can
+              hide.<time>11:49 PM</time></div>
             <div class="phone-message sent" hidden>Why are you at the station? Are you safe?<time>11:49 PM</time></div>
-            <div class="phone-message received" hidden>I need to get away from here. I can't take it anymore.<time>11:51 PM</time></div>
-            <div class="phone-message sent" hidden>Stay where you are. I'm coming. Please answer me.<time>11:51 PM</time></div>
+            <div class="phone-message received" hidden>I need to get away from here. I can't take it anymore.<time>11:51
+                PM</time></div>
+            <div class="phone-message sent" hidden>Stay where you are. I'm coming. Please answer me.<time>11:51
+                PM</time></div>
             <div class="phone-typing" hidden aria-label="Mau is typing"><span></span><span></span><span></span></div>
           </div>
           <div class="phone-compose" aria-hidden="true"><span>Message</span><span class="phone-send">↑</span></div>
@@ -57,46 +133,40 @@
     <section id="home-disclosure-scene" class="home-disclosure-scene" aria-label="Freya's memory" hidden>
       <p id="home-disclosure-text" class="home-disclosure-text">her father</p>
     </section>
-    <section id="chapter-two-scene" class="chapter-two-scene" aria-label="Chapter two" hidden>
-      <div class="chapter-two-card">
-        <p>CHAPTER TWO</p>
-        <h2>The Secret</h2>
-        <span>The interview continues</span>
-      </div>
-      <button id="continue-chapter-two" type="button">Continue</button>
-    </section>
-    <audio id="background-music" src="Daddy%20Cop-Zander%20Hawley%20(Slowed).mp3" loop preload="auto"></audio>
+    <iframe id="chapter-two-frame" class="chapter-two-frame" src="chapter2.html" title="Chapter Two" hidden></iframe>
+    <audio id="background-music" src="ambiance.mp3" loop preload="auto"></audio>
+    <audio id="rain-sound" src="rain.mp3" loop preload="auto"></audio>
+    <audio id="lie-sound" src="heart.mp3" preload="auto"></audio>
+    <button id="return-to-menu" class="return-to-menu" type="button" hidden>Return to menu</button>
     <button id="music-toggle" class="music-toggle" type="button" aria-pressed="false" hidden>Mute music</button>
-    <div
-      id="suspicion-meter"
-      class="suspicion-meter"
-      role="progressbar"
-      aria-label="Officer suspicion"
-      aria-valuemin="0"
-      aria-valuemax="3"
-      aria-valuenow="0"
-    >
-      <span class="suspicion-label">SUSPICION</span>
+    <div id="suspicion-meter" class="suspicion-meter" role="progressbar" aria-label="Officer suspicion"
+      aria-valuemin="0" aria-valuemax="3" aria-valuenow="0">
       <span class="suspicion-track"><span id="suspicion-fill" class="suspicion-fill"></span></span>
       <span id="suspicion-count" class="suspicion-count">0 / 3</span>
     </div>
-    <div class="observation-window"></div>
-    <img id="character" src="daddy.png" alt="Daddy Cop interviewing a girl">
+    <img id="character" src="game1.png" alt="Character in the interview">
     <div class="prisoner-silhouette" aria-hidden="true"></div>
     <div class="cell-bars" aria-hidden="true"></div>
 
     <div class="dialogue-box">
-      <div id="speaker-name" class="name-tag">Daddy Cop</div>
-      <p id="dialogue-text">Hello. I'm Officer Daddy Cop. I need to ask you a few questions about your missing friend Mau. What was Mau like, and where did you last see her?</p>
-      
-      <div id="choices" class="choices">
-        <button onclick="respond('personality')">Describe Mau's personality</button>
-        <button onclick="respond('location')">Tell him where Mau was last seen</button>
-      </div>
+      <div id="speaker-name" class="name-tag">Officer Riley</div>
+      <p id="dialogue-text">Hello. I'm Officer Riley. I need to ask you a few questions about your missing friend
+        Mau. What was Mau like, and where did you last see her?</p>
     </div>
+    <div id="choices" class="choices">
+      <button onclick="respond('personality')">Describe Mau's personality</button>
+      <button onclick="respond('location')">Tell him where Mau was last seen</button>
+    </div>
+    <section id="game-over-screen" class="game-over-screen" aria-labelledby="game-over-title" hidden>
+      <div class="game-over-panel">
+        <h2 id="game-over-title">Game Over</h2>
+        <button id="game-over-return-to-menu" type="button">Return to menu</button>
+      </div>
+    </section>
   </div>
 
   <script src="script.js"></script>
-  
+
 </body>
+
 </html>
