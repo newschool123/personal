@@ -501,7 +501,6 @@ function typeText(message) {
     if (i >= message.length) {
       clearInterval(typingTimer);
       dialogueTyping = false;
-      showGameOverScreen();
     }
   }, 30);
 }
@@ -524,6 +523,7 @@ document.addEventListener("contextmenu", (event) => {
 });
 
 document.addEventListener("click", (event) => {
+  if (event.button !== 0) return;
   if (
     event.target.closest("button") ||
     !mainMenuElement.hidden ||
